@@ -17,22 +17,9 @@ Este repositório contém o código e os artefatos para a atividade 2 do módulo
 ├── cicd_pipeline.png
 ├── infra
 │   ├── ecr
-│   │   ├── backend.tf
-│   │   ├── main.tf
-│   │   └── providers.tf
 │   ├── ecs
-│   │   ├── backend.tf
-│   │   ├── main.tf
-│   │   ├── providers.tf
-│   │   └── variables.tf
 │   ├── terraform-backend-ecr
-│   │   ├── dynamodb
-│   │   ├── iam_role
-│   │   └── s3
 │   └── terraform-backend-ecs
-│       ├── dynamodb
-│       ├── iam_role
-│       └── s3
 ├── iris_model.pkl
 ├── requirements.txt
 └── src

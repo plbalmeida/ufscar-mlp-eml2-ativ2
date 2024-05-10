@@ -2,11 +2,11 @@
 
 ## Projeto de classificação de Iris com esteira de CI/CD com Actions do GitHub
 
-Este repositório contém o código e os artefatos para a atividade 2 do módulo 2 de Engenharia de Machine Learning, parte do curso de pós-graduação *ML in Production* da UFSCar. O projeto consiste em um modelo de Machine Learning para classificar flores Iris, uma API Flask para predição online, Docker para containerização da aplicação, provisionamento de recursos na AWS com Terraform, e esteira de CI/CD com quatro jobs: de lint, teste, build/push, e deploy.
+Este repositório contém o código e os artefatos para a atividade 2 do módulo 2 de Engenharia de Machine Learning, parte do curso de pós-graduação *ML in Production* da UFSCar. O projeto consiste em um modelo de Machine Learning para classificar flores Iris, uma API Flask para predição online, Docker para containerização da aplicação, Terraform para provisionamento de recursos na AWS, e esteira de CI/CD.
 
 ## Estrutura do repositório
 
-```
+```bash
 /ufscar-mlp-eml2-ativ2
 ├── .github
 │   └── workflows
@@ -39,14 +39,20 @@ Este repositório contém o código e os artefatos para a atividade 2 do módulo
     ├── __init__.py
     ├── app.py
     ├── model.py
+    ├── validate.py
     └── tests
         ├── test_app.py
-        └── test_model.py
+        ├── test_model.py
+        └── test_validate.py
 ```
 
 ## Pré-requisitos
 
 Antes de começar, você precisará ter o Docker instalado em sua máquina. Você pode instalar o Docker seguindo as instruções no [site oficial do Docker](https://www.docker.com/products/docker-desktop).
+
+E é ncessário definir os *secrets* com as credenciais da AWS no GitHub.
+
+![](figures/secrets.png)
 
 ## Como Rodar o Projeto
 
@@ -62,7 +68,7 @@ git clone https://github.com/plbalmeida/ufscar-mlp-eml2-ativ2.git
 
 Executar o seguinte comando:
 
-```
+```bash
 python src/model.py
 ```
 
@@ -70,19 +76,19 @@ python src/model.py
 
 ### Passo 3: Execução da esteira de CI/CD
 
+Primeiro, crie o backend do Terraform fazendo o merge para a branch `terraform-backend`.
+
 Faça o push utilizando o seguinte comando para a branch `main` do repositório:
 
-```
+```bash
 git push
 ```
 
 É esperado que o pipeline de CI/CD no Actions do GitHub seja executado com sucesso.
 
-![](cicd_pipeline.png)
+![](figures/cicd_pipeline.png)
 
-O pipeline de CI/CD definido no GitHub Actions organiza o fluxo de trabalho em quatro etapas principais, começando pela verificação de lint, seguido por testes e, build e push da imagem Docker para o serviço de registry do ECR da AWS, por fim, o deploy da aplicação no ECS. Há um job adicional para destruição dos recursos provisionados na AWS. Aqui está um resumo de cada job e o que eles fazem:
-
-O pipeline de CI/CD definido no GitHub Actions organiza o fluxo de trabalho em cinco etapas principais: `lint`, `test`, `build-and-push`, `deploy` e `destroy`. Aqui está um resumo de cada job e o que eles fazem:
+O pipeline de CI/CD definido no GitHub Actions organiza o fluxo de trabalho em seis etapas principais: `lint`, `test`, `model-validate`, `build-and-push`, `deploy` e `destroy`. Aqui está um resumo de cada job e o que eles fazem:
 
 #### `lint`
 **Objetivo**: Validar o código-fonte usando ferramentas de linting.
@@ -99,9 +105,17 @@ O pipeline de CI/CD definido no GitHub Actions organiza o fluxo de trabalho em c
 - **Install dependencies**: Instala as dependências necessárias para os testes.
 - **Run tests**: Executa os testes unitários configurados no diretório `tests` do projeto, garantindo que o código funcione conforme esperado.
 
+#### `model-validate`
+**Objetivo**: Validar a acurácia do modelo de machine learning.
+- **Dependências**: Este job depende do sucesso do job `test`.
+- **Checkout code**: Clona o código-fonte para o ambiente do runner.
+- **Setup Python**: Configura a versão do Python especificada.
+- **Install dependencies**: Instala as dependências necessárias para a validação do modelo.
+- **Validate model accuracy**: Executa um script Python para avaliar a acurácia do modelo.
+
 #### `build-and-push`
 **Objetivo**: Construir e enviar imagens Docker para o Docker Hub e Amazon ECR.
-- **Dependências**: Depende do sucesso do job `test`, assegurando que as imagens Docker só sejam construídas e enviadas após os testes passarem.
+- **Dependências**: Depende do sucesso do job `model-validate`, assegurando que as imagens Docker só sejam construídas e enviadas após a validação do modelo.
 - **Checkout code**: Clona o código-fonte para o ambiente do runner.
 - **Configure AWS credentials**: Configura as credenciais da AWS necessárias para interagir com os serviços AWS.
 - **Setup Terraform e inicialização**: Configura o Terraform e inicializa os módulos necessários para gerenciar recursos da AWS.
@@ -121,15 +135,39 @@ O pipeline de CI/CD definido no GitHub Actions organiza o fluxo de trabalho em c
 - **Setup Terraform e inicialização**: Configura o Terraform e inicializa os módulos para a destruição dos recursos.
 - **Terraform Destroy**: Executa a destruição dos recursos no AWS ECS e ECR, removendo-os completamente.
 
-Cada job está claramente definido para lidar com uma fase específica do ciclo de desenvolvimento, garantindo que cada push nos branches `main` ou `infra-destroy` passe por um processo rigoroso de CI/CD, ajudando a manter a qualidade e a estabilidade do código no projeto.
+Cada job está claramente definido para lidar com uma fase específica do ciclo de desenvolvimento, garantindo que cada push nos branches `main` ou `infra-destroy` passe por um processo rigor
 
 Cada job está claramente definido para lidar com uma fase específica do ciclo de desenvolvimento:
 - **`lint`**: foca na qualidade do código e conformidade com padrões de codificação.
 - **`test`**: foca na corretude e funcionalidade do código através de testes automatizados.
+- **`model-validate`**: foca na validação da acurácia do modelo.
 - **`build-and-push`**: foca na preparação e disponibilização da imagem Docker.
 - **`deploy`**: foca na implementação da aplicação em um ambiente de produção.
 
 Este fluxo garante que cada push no branch `main` passe por um processo rigoroso de CI/CD, ajudando a manter a qualidade e a estabilidade do código no projeto.
+
+### Passo 4: Predições com o endpoint do modelo
+
+Acessar o console da AWS *EC2 > Load balancers* e usar o endpoint do *DNS name* para as predições.
+
+![](figures/endpoint.png)
+
+```bash
+curl -X POST \
+     http://ecs-alb-2105896072.us-east-1.elb.amazonaws.com:8080/predict \
+     -H "Content-Type: application/json" \
+     -d '{"features": [5.1, 3.5, 1.4, 0.2]}'
+```
+
+O retorno esperado é o seguinte:
+
+```bash
+{"prediction":0}
+```
+
+### Passo 5: Destruição dos recursos provisionados na AWS
+
+Para destruir os recursos provisionados pelo pipeline de CI/CD na AWS faça o merge para a branch `infra-destroy`.
 
 # Contribuições
 

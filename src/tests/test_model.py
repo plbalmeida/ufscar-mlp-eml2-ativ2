@@ -2,13 +2,7 @@ import joblib
 import numpy as np
 import os
 import pytest
-from sklearn.datasets import load_iris
 from src.model import train_and_save_model
-
-
-@pytest.fixture(scope="module")
-def iris_data():
-    return load_iris(return_X_y=True)
 
 
 @pytest.fixture(scope="module")

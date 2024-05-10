@@ -1,0 +1,80 @@
+name: Setup Terraform Backend
+
+on: 
+  push:
+    branches: 
+      - terraform-backend
+
+jobs:
+  setup-s3:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      
+      - name: Terraform Init and Apply for S3 (backend for ECR)
+        run: |
+          cd infra/terraform-backend-ecr/s3
+          terraform init
+          terraform apply -auto-approve
+      
+      - name: Terraform Init and Apply for S3 (backend for ECS)
+        run: |
+          cd infra/terraform-backend-ecs/s3
+          terraform init
+          terraform apply -auto-approve
+
+  setup-dynamodb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform Init and Apply for Dynamo DB (backend for ECR)
+        run: |
+          cd infra/terraform-backend-ecr/dynamodb
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Terraform Init and Apply for Dynamo DB (backend for ECS)
+        run: |
+          cd infra/terraform-backend-ecs/dynamodb
+          terraform init
+          terraform apply -auto-approve
+  
+  setup-iam-role:
+    runs-on: ubuntu-latest
+    needs: [setup-s3, setup-dynamodb]
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Terraform Init and Apply for IAM Role (backend for ECR)
+        run: |
+          cd infra/terraform-backend-ecr/iam_role
+          terraform init
+          terraform apply -auto-approve
+
+      - name: Terraform Init and Apply for IAM Role (backend for ECS)
+        run: |
+          cd infra/terraform-backend-ecs/iam_role
+          terraform init
+          terraform apply -auto-approve

@@ -1,0 +1,149 @@
+name: CI/CD pipeline
+on:
+  push:
+    branches: 
+      - main
+      - infra-destroy
+
+jobs:
+  lint:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run Flake8
+        run: |
+          flake8 ./src
+  test:
+    if: github.ref == 'refs/heads/main'
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          export PYTHONPATH=.
+          pytest ./src/tests
+
+  build-and-push:
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+  
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: "1.0.0"
+
+      - name: Terraform ECR
+        run: |
+          cd infra/ecr
+          terraform init
+          terraform plan
+          terraform apply -auto-approve
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v1
+  
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+  
+      - name: Build Docker image locally
+        run: |
+          docker build -t 413467296690.dkr.ecr.us-east-1.amazonaws.com/ufscar-mlp-eml2-ativ2:latest -f ./Dockerfile .
+  
+      - name: Push Docker image to Amazon ECR
+        run: |
+          docker push 413467296690.dkr.ecr.us-east-1.amazonaws.com/ufscar-mlp-eml2-ativ2:latest
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: '1.0.0'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1'
+
+      - name: Terraform ECS
+        run: |
+          cd infra/ecs
+          terraform init
+          terraform plan -var="docker_image=413467296690.dkr.ecr.us-east-1.amazonaws.com/ufscar-mlp-eml2-ativ2:latest"
+          terraform apply -var="docker_image=413467296690.dkr.ecr.us-east-1.amazonaws.com/ufscar-mlp-eml2-ativ2:latest" -auto-approve
+      
+  destroy:
+    if: github.ref == 'refs/heads/infra-destroy'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: '1.0.0'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1'
+
+      - name: Terraform Destroy ECR
+        run: |
+          cd infra/ecr
+          terraform init
+          terraform plan
+          terraform destroy -auto-approve
+
+      - name: Terraform Destroy ECS
+        run: |
+          cd infra/ecs
+          terraform init
+          terraform plan
+          terraform destroy -auto-approve

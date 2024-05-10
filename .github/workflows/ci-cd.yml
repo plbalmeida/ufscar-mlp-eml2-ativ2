@@ -47,9 +47,30 @@ jobs:
           export PYTHONPATH=.
           pytest ./src/tests
 
-  build-and-push:
+  model-validate:
     if: github.ref == 'refs/heads/main'
     needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.8'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Validate model accuracy
+        run: |
+          python -m src/model.validate
+        
+  build-and-push:
+    if: github.ref == 'refs/heads/main'
+    needs: model-validate
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

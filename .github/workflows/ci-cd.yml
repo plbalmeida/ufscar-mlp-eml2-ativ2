@@ -66,8 +66,8 @@ jobs:
 
       - name: Validate model accuracy
         run: |
-          export PYTHONPATH=./src:$PYTHONPATH
-          python -m model.validate
+          export PYTHONPATH=.
+          python src/validate.py
         
   build-and-push:
     if: github.ref == 'refs/heads/main'

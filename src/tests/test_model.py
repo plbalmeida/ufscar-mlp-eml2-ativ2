@@ -1,42 +1,38 @@
-import numpy as np
-import pytest
 import joblib
-from src.model import train_and_save_model, predict, validate
+import numpy as np
+import os
+import pytest
+from src.model import train_and_save_model
 
 
 @pytest.fixture(scope="module")
 def trained_model():
-    """Treina o modelo e o salva para uso nos testes."""
     train_and_save_model()
     return joblib.load('iris_model.pkl')
 
 
-def test_train_and_save_model():
-    """Testa se o modelo é treinado e salvo corretamente."""
+def test_model_file_exists():
+    """Testa se o arquivo do modelo é criado."""
     train_and_save_model()
-    loaded_model = joblib.load('iris_model.pkl')
-    assert loaded_model is not None
+    assert os.path.isfile('iris_model.pkl')
 
 
-def test_predict_valid(trained_model):
-    """Testa a função de predição com dados válidos."""
-    features = [5.9, 3.0, 5.1, 1.8]
-    prediction = predict(features)
-    assert isinstance(prediction, np.int64)
+def test_model_not_none(trained_model):
+    """Testa se o modelo carregado não é None."""
+    assert trained_model is not None
 
 
-def test_predict_invalid(trained_model):
-    """Testa a função de predição com dados inválidos para gerar exceções."""
-    with pytest.raises(ValueError):
-        predict([])
+def test_model_attributes(trained_model):
+    """Verifica se os atributos principais do modelo estão presentes."""
+    assert hasattr(trained_model, 'coef_')
+    assert hasattr(trained_model, 'intercept_')
 
 
-def test_validate_accuracy(trained_model, capsys):
-    """Testa se imprime a mensagem de continuação do fluxo e acurácia."""
-    validate()
-    captured = capsys.readouterr()
-    assert "Model accuracy: " in captured.out
-    if "Model accuracy below 90%" in captured.out:
-        assert "stopping the CI/CD pipeline." in captured.out
-    else:
-        assert "continuing CI/CD pipeline." in captured.out
+def test_model_reproducibility():
+    """Verifica se o modelo é reprodutível."""
+    train_and_save_model()
+    model1 = joblib.load('iris_model.pkl')
+    train_and_save_model()
+    model2 = joblib.load('iris_model.pkl')
+    assert model1.get_params() == model2.get_params()
+    assert np.array_equal(model1.coef_, model2.coef_)

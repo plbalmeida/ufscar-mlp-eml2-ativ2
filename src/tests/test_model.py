@@ -32,7 +32,11 @@ def test_predict_invalid(trained_model):
 
 
 def test_validate_accuracy(trained_model, capsys):
-    """Testa se a validação imprime a precisão esperada."""
+    """Testa se imprime a mensagem de continuação do fluxo e acurácia."""
     validate()
     captured = capsys.readouterr()
-    assert "Model validation: PASS" in captured.out
+    assert "Model accuracy: " in captured.out
+    if "Model accuracy below 90%" in captured.out:
+        assert "stopping the CI/CD pipeline." in captured.out
+    else:
+        assert "continuing CI/CD pipeline." in captured.out

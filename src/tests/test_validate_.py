@@ -25,11 +25,13 @@ def test_validate_model_low_accuracy(capsys):
         mock_load.return_value = model
 
         with patch('src.validate.accuracy_score', return_value=0.85):
-            validate_model()
+            with pytest.raises(SystemExit) as e:
+                validate_model()
+            assert e.type == SystemExit
+            assert e.value.code == 1
             captured = capsys.readouterr()
             assert "Model accuracy: 0.85" in captured.out
             assert "stopping the CI/CD pipeline." in captured.out
-            assert captured.err == ""
 
 
 @pytest.mark.parametrize("accuracy", [0.9, 0.91, 0.89, 0.75, 0.99])

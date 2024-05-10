@@ -1,4 +1,5 @@
 import joblib
+import numpy as np
 import os
 import pytest
 from sklearn.datasets import load_iris
@@ -40,4 +41,4 @@ def test_model_reproducibility():
     train_and_save_model()
     model2 = joblib.load('iris_model.pkl')
     assert model1.get_params() == model2.get_params()
-    assert all(model1.coef_ == model2.coef_)
+    assert np.array_equal(model1.coef_, model2.coef_)

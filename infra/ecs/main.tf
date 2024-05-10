@@ -161,7 +161,7 @@ resource "aws_lb_target_group" "ecs_tg" {
   health_check {
     enabled             = true
     protocol            = "HTTP"
-    path                = "/predict"
+    path                = "/health"
     healthy_threshold   = 2
     unhealthy_threshold = 2
     timeout             = 5

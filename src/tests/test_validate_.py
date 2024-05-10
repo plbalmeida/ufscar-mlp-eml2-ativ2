@@ -43,10 +43,15 @@ def test_validate_model_edge_cases(capsys, accuracy):
         mock_load.return_value = model
 
         with patch('src.validate.accuracy_score', return_value=accuracy):
-            validate_model()
-            captured = capsys.readouterr()
-            assert f"Model accuracy: {accuracy:.2f}" in captured.out
+            with pytest.raises(SystemExit) as sys_exit:
+                validate_model()
+            assert sys_exit.type == SystemExit
             if accuracy < 0.9:
-                assert "stopping the CI/CD pipeline." in captured.out
+                assert sys_exit.value.code == 1
+                captured = capsys.readouterr()
+                assert f"Model accuracy: {accuracy:.2f}" in captured.out
+                assert "Model accuracy below 90%, stopping the CI/CD pipeline." in captured.out  # noqa e401
             else:
+                captured = capsys.readouterr()
+                assert f"Model accuracy: {accuracy:.2f}" in captured.out
                 assert "continuing CI/CD pipeline." in captured.out

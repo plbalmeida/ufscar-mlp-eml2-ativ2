@@ -122,16 +122,13 @@ O pipeline de CI/CD definido no GitHub Actions organiza o fluxo de trabalho em s
 - **Setup Terraform e inicialização**: Configura o Terraform e inicializa os módulos para a destruição dos recursos.
 - **Terraform Destroy**: Executa a destruição dos recursos no AWS ECS e ECR, removendo-os completamente.
 
-Cada job está claramente definido para lidar com uma fase específica do ciclo de desenvolvimento, garantindo que cada push nos branches `main` ou `infra-destroy` passe por um processo rigor
+Resumidamante:
 
-Cada job está claramente definido para lidar com uma fase específica do ciclo de desenvolvimento:
 - **`lint`**: foca na qualidade do código e conformidade com padrões de codificação.
 - **`test`**: foca na corretude e funcionalidade do código através de testes automatizados.
 - **`model-validate`**: foca na validação da acurácia do modelo.
 - **`build-and-push`**: foca na preparação e disponibilização da imagem Docker.
 - **`deploy`**: foca na implementação da aplicação em um ambiente de produção.
-
-Este fluxo garante que cada push no branch `main` passe por um processo rigoroso de CI/CD, ajudando a manter a qualidade e a estabilidade do código no projeto.
 
 ### Passo 4: Predições com o endpoint do modelo
 
@@ -186,7 +183,7 @@ A seguir é detalhada da arquitetura da plicação na AWS para suportar a aplica
 6. **Elastic Container Registry (ECR)**:
    - O repositório ECR `aws_ecr_repository.ufscar_mlp_eml2_ativ2` armazena as imagens Docker utilizadas pela tarefa do ECS. A configuração de escaneamento de imagem está ativada para garantir que as imagens sejam verificadas quanto a vulnerabilidades antes de serem implantadas.
 
-Esta arquitetura garante que a aplicação Flask seja altamente disponível, segura e escalável, permitindo um gerenciamento eficiente dos recursos e tráfego. A aplicação serve um modelo para previsão de flores Iris que pode ser acessado através de uma API HTTP, processando solicitações de previsão com base em características de entrada fornecidas pelos usuários.
+Esta arquitetura garante que a aplicação Flask seja altamente disponível, segura e escalável, permitindo um gerenciamento eficiente dos recursos e tráfego. A aplicação serve o modelo que pode ser acessado através de uma API HTTP, processando solicitações de previsão com base em características de entrada fornecidas pelos usuários.
 
 # Contribuições
 

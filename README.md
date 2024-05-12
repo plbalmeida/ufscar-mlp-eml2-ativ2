@@ -160,28 +160,28 @@ Para destruir os recursos provisionados pelo pipeline de CI/CD na AWS faça o me
 A seguir é detalhada a arquitetura da splicação na AWS para suportar a aplicação Flask que serve um modelo de previsão usando o Amazon ECS:
 
 1. **VPC e Subnets**:
-   - A VPC `aws_vpc.main` com CIDR `10.0.0.0/16` define o espaço de rede isolado onde todos os recursos residem.
-   - Dentro da VPC, existem duas subnets públicas, `aws_subnet.ecs_subnet1` (10.0.1.0/24) e `aws_subnet.ecs_subnet2` (10.0.2.0/24), localizadas em zonas de disponibilidade diferentes (us-east-1a e us-east-1b), aumentando a alta disponibilidade da aplicação.
+- A VPC `aws_vpc.main` com CIDR `10.0.0.0/16` define o espaço de rede isolado onde todos os recursos residem.
+- Dentro da VPC, existem duas subnets públicas, `aws_subnet.ecs_subnet1` (10.0.1.0/24) e `aws_subnet.ecs_subnet2` (10.0.2.0/24), localizadas em zonas de disponibilidade diferentes (us-east-1a e us-east-1b), aumentando a alta disponibilidade da aplicação.
 
 2. **Internet Gateway e Route Table**:
-   - Um Internet Gateway `aws_internet_gateway.igw` está associado à VPC, permitindo comunicação entre os recursos na VPC e a internet.
-   - A Route Table `aws_route_table.rtb` tem uma rota que direciona todo o tráfego destinado a IPs externos para o Internet Gateway, e está associada a ambas as subnets.
+- Um Internet Gateway `aws_internet_gateway.igw` está associado à VPC, permitindo comunicação entre os recursos na VPC e a internet.
+- A Route Table `aws_route_table.rtb` tem uma rota que direciona todo o tráfego destinado a IPs externos para o Internet Gateway, e está associada a ambas as subnets.
 
 3. **Security Group**:
-   - O Security Group `aws_security_group.ecs_sg` define as regras de tráfego, permitindo tráfego de entrada na porta 8080 (onde a aplicação Flask escuta) e permitindo o tráfego de saída nas portas 443 e todas as outras, garantindo que a aplicação possa comunicar-se com a internet e outros serviços AWS de forma segura.
+- O Security Group `aws_security_group.ecs_sg` define as regras de tráfego, permitindo tráfego de entrada na porta 8080 (onde a aplicação Flask escuta) e permitindo o tráfego de saída nas portas 443 e todas as outras, garantindo que a aplicação possa comunicar-se com a internet e outros serviços AWS de forma segura.
 
 4. **ECS Components (Elastic Container Service)**:
-   - **ECS Cluster**: O `aws_ecs_cluster.ecs_cluster` organiza os recursos do ECS, como serviços e tarefas.
-   - **ECS Task Definition**: A definição de tarefa `aws_ecs_task_definition.ecs_task` especifica o contêiner a ser executado, incluindo a configuração de CPU, memória, e a imagem do contêiner (armazenada no ECR e especificada pela variável `var.docker_image`). O contêiner também mapeia a porta 8080 do contêiner para a mesma porta no host, facilitando o acesso ao serviço Flask.
-   - **ECS Service**: O serviço `aws_ecs_service.ecs_service` mantém a aplicação Flask rodando continuamente, assegurando que o número desejado de instâncias da definição de tarefa esteja sempre executando. O serviço é configurado para utilizar o tipo de lançamento FARGATE, que simplifica a operação ao gerenciar a infraestrutura subjacente.
+- **ECS Cluster**: O `aws_ecs_cluster.ecs_cluster` organiza os recursos do ECS, como serviços e tarefas.
+- **ECS Task Definition**: A definição de tarefa `aws_ecs_task_definition.ecs_task` especifica o contêiner a ser executado, incluindo a configuração de CPU, memória, e a imagem do contêiner (armazenada no ECR e especificada pela variável `var.docker_image`). O contêiner também mapeia a porta 8080 do contêiner para a mesma porta no host, facilitando o acesso ao serviço Flask.
+- **ECS Service**: O serviço `aws_ecs_service.ecs_service` mantém a aplicação Flask rodando continuamente, assegurando que o número desejado de instâncias da definição de tarefa esteja sempre executando. O serviço é configurado para utilizar o tipo de lançamento FARGATE, que simplifica a operação ao gerenciar a infraestrutura subjacente.
 
 5. **Load Balancer**:
-   - O Application Load Balancer `aws_lb.ecs_alb` distribui o tráfego de entrada entre as instâncias do contêiner rodando em subnets diferentes. Este ALB é associado ao mesmo Security Group e subnets que as tarefas do ECS.
-   - Um Target Group `aws_lb_target_group.ecs_tg` está configurado para direcionar o tráfego na porta 8080 e realiza verificações de saúde no caminho `/health` para garantir que apenas instâncias saudáveis recebam tráfego.
-   - Um Listener `aws_lb_listener.ecs_listener` no ALB escuta na porta 8080 e encaminha o tráfego para o Target Group, usando a ação "forward".
+- O Application Load Balancer `aws_lb.ecs_alb` distribui o tráfego de entrada entre as instâncias do contêiner rodando em subnets diferentes. Este ALB é associado ao mesmo Security Group e subnets que as tarefas do ECS.
+- Um Target Group `aws_lb_target_group.ecs_tg` está configurado para direcionar o tráfego na porta 8080 e realiza verificações de saúde no caminho `/health` para garantir que apenas instâncias saudáveis recebam tráfego.
+- Um Listener `aws_lb_listener.ecs_listener` no ALB escuta na porta 8080 e encaminha o tráfego para o Target Group, usando a ação "forward".
 
 6. **Elastic Container Registry (ECR)**:
-   - O repositório ECR `aws_ecr_repository.ufscar_mlp_eml2_ativ2` armazena as imagens Docker utilizadas pela tarefa do ECS. A configuração de escaneamento de imagem está ativada para garantir que as imagens sejam verificadas quanto a vulnerabilidades antes de serem implantadas.
+- O repositório ECR `aws_ecr_repository.ufscar_mlp_eml2_ativ2` armazena as imagens Docker utilizadas pela tarefa do ECS. A configuração de escaneamento de imagem está ativada para garantir que as imagens sejam verificadas quanto a vulnerabilidades antes de serem implantadas.
 
 Esta arquitetura garante que a aplicação Flask seja altamente disponível, segura e escalável, permitindo um gerenciamento eficiente dos recursos e tráfego. A aplicação serve o modelo que pode ser acessado através de uma API HTTP, processando solicitações de previsão com base em características de entrada fornecidas pelos usuários.
 

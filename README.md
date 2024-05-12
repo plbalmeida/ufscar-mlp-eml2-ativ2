@@ -122,7 +122,7 @@ O pipeline de CI/CD definido no GitHub Actions organiza o fluxo de trabalho em s
 - **Setup Terraform e inicialização**: Configura o Terraform e inicializa os módulos para a destruição dos recursos.
 - **Terraform Destroy**: Executa a destruição dos recursos no AWS ECS e ECR, removendo-os completamente.
 
-Resumidamante:
+Resumidamente:
 
 - **`lint`**: foca na qualidade do código e conformidade com padrões de codificação.
 - **`test`**: foca na corretude e funcionalidade do código através de testes automatizados.
@@ -157,7 +157,7 @@ Para destruir os recursos provisionados pelo pipeline de CI/CD na AWS faça o me
 
 ![](figures/arquitetura.png)
 
-A seguir é detalhada da arquitetura da plicação na AWS para suportar a aplicação Flask que serve um modelo de previsão usando o Amazon ECS:
+A seguir é detalhada a arquitetura da splicação na AWS para suportar a aplicação Flask que serve um modelo de previsão usando o Amazon ECS:
 
 1. **VPC e Subnets**:
    - A VPC `aws_vpc.main` com CIDR `10.0.0.0/16` define o espaço de rede isolado onde todos os recursos residem.
